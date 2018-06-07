@@ -4,13 +4,6 @@ from queue import *
 from functools import reduce
 from colorama import *
 
-################################################################################
-#                                 Messages                                     #
-################################################################################
-################################################################################
-
-# Help message
-
 help = """Simple multi-threading proxy checker.
 Proxy format: host:port, 1 proxy/line
 Usage: {0} <-f file with proxies> [-f file2 -f file3...] [keys]
@@ -47,14 +40,6 @@ Connecting:
 usage = """Usage: {0} <-f file with proxies> [keys]
 Try --help.""".format(sys.argv[0])
 
-################################################################################
-
-
-
-################################################################################
-#                                 Functions                                    #
-################################################################################
-################################################################################
 
 def error(mode, error):       
     if not mode: print(error) 
@@ -170,14 +155,8 @@ def main():
         thread.start()                         
     for thread in threads: 
         thread.join()      
-################################################################################
 
-
-
-################################################################################
-#                                    Classes                                   #
-################################################################################
-
+        
 class Checker(threading.Thread):
     def __init__(self, data, queue, file_locker, ID):
         self.data = data               
@@ -186,7 +165,7 @@ class Checker(threading.Thread):
         self.locker = file_locker       
         threading.Thread.__init__(self) 
         
-    def run(self): # Main method
+    def run(self):
         
         gen_proxies = lambda protocol, proxy: {
             'http'  : protocol + '://' + proxy,
@@ -221,10 +200,12 @@ class Checker(threading.Thread):
                     '+' if valid['https']  else '-',
                     '+' if valid['socks5'] else '-'
                 )
+                
             is_valid = reduce( # If proxy support any of this protocol
                 lambda a, b: a or b, 
                 [valid[key] for key in self.data['accept']]
                 ) 
+        
             if is_valid and self.data['show'] != 'bad' or self.data['show'] != 'good':
                 with self.locker: 
                     if self.data['format']:
