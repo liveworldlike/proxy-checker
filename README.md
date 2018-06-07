@@ -1,66 +1,15 @@
-# proxy-checker  
+# Description
 
-Простой многопоточный прокси-чекер. 
+Simple multi-threading proxy checker.
 
-Принимает файл или несколько файлов с прокси в формате хост(или ip):порт, один прокси на линию.  
+Takes several files with proxies, 1 proxy/line as input, tries to connect to "http(s)://google.com" through proxy using http, https and socks5 protocols, and print results.
 
-Использование: 
+# Requirements
 
-                      proxy-checker <-f файл с прокси [-f файл2, -f файл3...]> [другие опции] 
++ Python 3.4  
++ [requests](https://github.com/requests/requests)
 
-# Требования  
+# Usage
 
-+ Python 3.4 или выше  
-+ Библиотека requests  
-
-# Справка  
-
-## Общее  
-
-#### -h, --help  
-Показать справку и выйти.  
-
-## Вывод  
-
-#### -a --show-all
-Показывать и рабочие и нерабочие прокси.  
-
-####  -g --show-good  
-Показывать только рабочие прокси. (по умолчанию)  
-
-####  -b --show-bad   
-Показывать только нерабочие прокси.  
-
-####  --format   
-Печатать и записывать прокси в файл в цвете и в формате хост:порт +/-(http) +/-(https) +/-(socks5). (по умолчанию)      
-
-####  --no-format  
-Печатать прокси в формате хост:порт, и не раскрашивать их.  
-
-####  -q --quiet 
-Не показывать ошибки.       
-
-## Файловый ввод/вывод  
-
-#### -o <файл> --out <файл>
-Назначить файл для вывода прокси. (по умолчанию - /dev/null)
-
-#### -f <файл> --file <файл>
-Указать файл с прокси.
-
-## Потоки
-#### -c <число потоков> --threads-count <число потоков>
-Указать количество потоков. (по умолчанию - 10)
-
-## Проверка
-#### --timeout
-Указать время таймаута в секундах. (по умолчанию - 0.5)
-  
-#### --http-url      
-Ссылка для проверки http прокси (для этой и остальных опций url должен указываться вместе со схемой) (по умолчанию - http://google.com)
-        
-#### --https-url            
-Ссылка для проверки https прокси. (по умолчанию- https://google.com)
-                
-#### --socks5-url 
-Ссылка для проверки socks5 прокси. (по умолчанию - http://google.com)
+                      proxy-checker <-f file with proxies [-f file2, -f file3...]> [options] 
+                  
