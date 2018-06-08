@@ -2,7 +2,7 @@
 import threading, requests, sys, socks
 from queue import *
 from functools import reduce
-from colorama import *
+import colorama
 
 help = """Simple multi-threading proxy checker.
 Proxy format: host:port, 1 proxy/line
@@ -141,6 +141,7 @@ def arguments_parser():
     return proxies, result
 
 def main():
+    colorama.init()
     proxies, data = arguments_parser() 
     threads = []
     queue = Queue()
@@ -210,10 +211,9 @@ class Checker(threading.Thread):
                 with self.locker: 
                     if self.data['format']:
                         if is_valid:
-                            proxy = Fore.GREEN + proxy + Fore.RESET
+                            print(colorama.Fore.GREEN + proxy + colorama.Fore.RESET)
                         else:
-                            proxy = Fore.RED + proxy + Fore.RESET                    
-                    print(proxy)
+                            print(colorama.Fore.RED + proxy + colorama.Fore.RESET                    
                     try:
                         file = open(self.data['out_file'], 'a')
                         file.write(proxy + '\n')
@@ -222,4 +222,4 @@ class Checker(threading.Thread):
                         error(self.data['quiet'], 
                               'Unable to open file %s.' % self.data['out_file'])
                         
-if __name__ == '__main__': main() # Run main()
+if __name__ == '__main__': main()
