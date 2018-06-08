@@ -213,7 +213,7 @@ class Checker(threading.Thread):
                         if is_valid:
                             print(colorama.Fore.GREEN + proxy + colorama.Fore.RESET)
                         else:
-                            print(colorama.Fore.RED + proxy + colorama.Fore.RESET                    
+                            print(colorama.Fore.RED + proxy + colorama.Fore.RESET)
                     try:
                         file = open(self.data['out_file'], 'a')
                         file.write(proxy + '\n')
