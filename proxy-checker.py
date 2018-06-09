@@ -55,7 +55,7 @@ def arguments_parser():
     result = {   
         'show'          : 'good',               # all | good | bad
         'threads_count' : 10,                 
-        'out_file'      : '/dev/null',         
+        'out_file'      : None,         
         'urls'         : {                   
             'http'         : 'http://google.com',
             'https'        : 'https://google.com',
@@ -214,12 +214,13 @@ class Checker(threading.Thread):
                             print(colorama.Fore.GREEN + proxy + colorama.Fore.RESET)
                         else:
                             print(colorama.Fore.RED + proxy + colorama.Fore.RESET)
-                    try:
-                        file = open(self.data['out_file'], 'a')
-                        file.write(proxy + '\n')
-                        file.close()
-                    except:
-                        error(self.data['quiet'], 
-                              'Unable to open file %s.' % self.data['out_file'])
+                    if self.data['out_file']: 
+                        try:
+                            file = open(self.data['out_file'], 'a')
+                            file.write(proxy + '\n')
+                            file.close()
+                        except:
+                            error(self.data['quiet'], 
+                                  'Unable to open file %s.' % self.data['out_file'])
                         
 if __name__ == '__main__': main()
