@@ -8,7 +8,7 @@ Takes several files with proxies, 1 proxy/line as input, tries to connect to "ht
 
 + Python 3.4  
 + [requests](https://github.com/requests/requests)
-+ pySocks
++ [pySocks](https://github.com/Anorov/PySocks)
 
 # Usage
 
