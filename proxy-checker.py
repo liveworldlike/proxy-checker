@@ -5,7 +5,7 @@ from functools import reduce
 import colorama
 
 help = """Simple multi-threading proxy checker.
-Proxy format: host:port, 1 proxy/line
+Take several file with proxies in format host:port, 1 proxy/line
 Usage: {0} <-f file with proxies> [-f file2 -f file3...] [keys]
 Keys:
         -h      --help                  show this message and exit
@@ -30,14 +30,12 @@ Connecting:
                                         (default value - 5)
                 --timeout               set timeout in seconds
                                         (default value - 0.5)
-                --http-url              host to check http proxies 
-                                        (default value - http://google.com)
-                --https-url            host to check https proxies 
-                                        (default value - https://google.com)
-                --socks5-url           host to check socks5 proxies 
-                                        (default value - http://google.com)""".format(sys.argv[0])
+        -u      --url <protocol> <url> url to check proxies
+                                       url should be in format <scheme>://<host>[:port][/path]
+        -d      --disable <protocol>   don't try to connect using protocol
+        -e      --enable <protocol>    try to connect using protocol""".format(sys.argv[0])
 
-usage = """Usage: {0} <-f file with proxies> [keys]
+usage = """Usage: {0} <-f file with proxies> [-f file2 -f file3...] [keys]
 Try --help.""".format(sys.argv[0])
 
 
@@ -62,7 +60,6 @@ def arguments_parser():
             'socks5'       : 'http://google.com'
                           },  
         'protocols'     : ['http', 'https', 'socks5'], 
-        'accept'        : ['http', 'https', 'socks5'], 
         'timeout'       : 0.5,
         
         'format'        : True,
@@ -100,14 +97,10 @@ def arguments_parser():
         elif args[i] in ['-o', '--out']: 
             result['out_file'] = args[i + 1]
         
-        elif args[i] in ['--url-http']: 
-            result['urls']['http'] = args[i + 1]
-            
-        elif args[i] in ['--url-https']: 
-            result['urls']['https'] = args[i + 1]   
-        
-        elif args[i] in ['--url-socks5']: 
-            result['urls']['socks5'] = args[i + 1] 
+        elif args[i] in ['-u', '--url']:
+            protocol = args[i + 1]
+            url = args[i + 2]
+            result['urls'][protocol] = url
             
         elif args[i] in ['--timeout']:
             try:                
@@ -115,7 +108,18 @@ def arguments_parser():
             except ValueError:
                 error(result['quiet'], 
                       'Can\'t set timeout: %s is not a valid number.' 
-                       % args[i + 1])          
+                       % args[i + 1])   
+
+        elif args[i] in ['-d', '--disable']: 
+            if args[i + 1] in result['protocols']: 
+                result['protocols'].remove(args[i + 1])  
+                
+        elif args[i] in ['-e', '--enable']: 
+            protocol = args[i + i]
+            if not protocol in result['protocols']: 
+                result['protocols'].append(args[i + 1])
+                if not protocol in result['urls'].keys():
+                    result['urls'][protocol] = 'http://google.com/'
         
         # How to show:
         
@@ -146,8 +150,12 @@ def main():
     threads = []
     queue = Queue()
     file_locker = threading.Lock()
-    if data['format']:
-        print('%22s\thttp\thttps\tsocks5' % 'hostname/ip')
+    if data['format']: # Print table header
+        print('%22s\t%s' % (
+            'hostname/ip',
+            '\t'.join(data['protocols'])
+            )
+        )
     for proxy in proxies: 
         queue.put(proxy)      
     for i in range(data['threads_count']):
@@ -188,26 +196,25 @@ class Checker(threading.Thread):
                         valid[protocol] = requests.get(
                             self.data['urls'][protocol],
                             proxies = gen_proxies(protocol, proxy),
-                            timeout = 60
+                            timeout = 5
                         ).ok
                     except: 
                         valid[protocol] = False 
                 except: 
                     valid[protocol] = False 
             if self.data['format']:
-                proxy = '%22s\t%s\t%s\t%s' % ( 
-                                               proxy,
-                    '+' if valid['http']   else '-',
-                    '+' if valid['https']  else '-',
-                    '+' if valid['socks5'] else '-'
+                proxy = '%22s\t%s' % ( 
+                    proxy,
+                    '\t'.join(['+' if valid[key] else '-' for key in valid])
                 )
                 
-            is_valid = reduce( # If proxy support any of this protocol
+            is_valid = reduce( # If proxy support any of protocols
                 lambda a, b: a or b, 
-                [valid[key] for key in self.data['accept']]
+                [valid[key] for key in valid]
                 ) 
-        
-            if is_valid and self.data['show'] != 'bad' or self.data['show'] != 'good':
+            if ((is_valid and self.data['show'] == 'good') or 
+                ((not is_valid) and self.data['show'] == 'bad') or
+                (self.data['show'] == 'all')):
                 with self.locker: 
                     if self.data['format']:
                         if is_valid:
