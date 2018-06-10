@@ -24,10 +24,8 @@ Files:
         -f      --file                  specify input file
 Threads:
         -c      --threads-count         set the number of threads
-                                        (default value - 10)
+                                        (default value - 64)
 Connecting: 
-        -t      --tries                 set the number of tries
-                                        (default value - 5)
                 --timeout               set timeout in seconds
                                         (default value - 0.5)
         -u      --url <protocol> <url> url to check proxies
@@ -52,7 +50,7 @@ def arguments_parser():
     proxies = [] 
     result = {   
         'show'          : 'good',               # all | good | bad
-        'threads_count' : 10,                 
+        'threads_count' : 64,                 
         'out_file'      : None,         
         'urls'         : {                   
             'http'         : 'http://google.com',
