@@ -76,68 +76,127 @@ def arguments_parser():
     
     # The main body of parser  
     for i in range(len(args)):         
-        if args[i] in ['-f', '--file']:      
-            file_name = args[i + 1] 
-            try:                 
-                file = open(file_name)
-                proxies += [proxy.strip() for proxy in file] 
-                file.close()
-            except:         
-                error(result['quiet'], 'Unable to open file %s.' % file_name)
-            
-            
-        elif args[i] in ['-c', '--threads-count']:
-            try:  
-                result['threads_count'] = int(args[i + 1])
-            except ValueError: 
-                error(result['quiet'], 
+        if args[i].startswith('--'):
+            if args[i] in ['--file']:      
+                file_name = args[i + 1] 
+                try:                 
+                    file = open(file_name)
+                    proxies += [proxy.strip() for proxy in file] 
+                    file.close()
+                except:         
+                    error(result['quiet'], 'Unable to open file %s.' % file_name)
+                    
+                    
+            elif args[i] in ['--threads-count']:
+                try:  
+                    result['threads_count'] = int(args[i + 1])
+                except ValueError: 
+                    error(result['quiet'], 
                       'Can\'t set number of threads: %s is not a valid number.' 
                       % args[i + 1])
-
-        elif args[i] in ['-o', '--out']: 
-            result['out_file'] = args[i + 1]
-        
-        elif args[i] in ['-u', '--url']:
-            protocol = args[i + 1]
-            url = args[i + 2]
-            result['urls'][protocol] = url
-            
-        elif args[i] in ['--timeout']:
-            try:                
-                result['timeout'] = float(args[i + 1])
-            except ValueError:
-                error(result['quiet'], 
-                      'Can\'t set timeout: %s is not a valid number.' 
-                       % args[i + 1])   
-
-        elif args[i] in ['-d', '--disable']: 
-            if args[i + 1] in result['protocols']: 
-                result['protocols'].remove(args[i + 1])  
                 
-        elif args[i] in ['-e', '--enable']: 
-            protocol = args[i + i]
-            if not protocol in result['protocols']: 
-                result['protocols'].append(args[i + 1])
-                if not protocol in result['urls'].keys():
-                    result['urls'][protocol] = 'http://google.com/'
-        
-        # How to show:
-        
-        elif args[i] in ['-a', '--show-all']:
-            result['show'] = 'all'
+            elif args[i] in ['--out']: 
+                result['out_file'] = args[i + 1]
+                
+            elif args[i] in ['--url']:
+                protocol = args[i + 1]
+                url = args[i + 2]
+                result['urls'][protocol] = url
+                
+            elif args[i] in ['--timeout']:
+                try:                
+                    result['timeout'] = float(args[i + 1])
+                except ValueError:
+                    error(result['quiet'], 
+                          'Can\'t set timeout: %s is not a valid number.' 
+                          % args[i + 1])   
                     
-        elif args[i] in ['-g', '--show-good']:
-            result['show'] = 'good'
+            elif args[i] in ['--disable']: 
+                if args[i + 1] in result['protocols']: 
+                    result['protocols'].remove(args[i + 1])  
                     
-        elif args[i] in ['-b', '--show-bad']:
-            result['show'] = 'bad'
-             
-        elif args[i] in ['--no-format']:
-            result['format'] = False    
-            
-        elif args[i] in ['--format']:
-            result['format'] = True         
-
+                elif args[i] in ['--enable']: 
+                    protocol = args[i + i]
+                    if not protocol in result['protocols']: 
+                        result['protocols'].append(args[i + 1])
+                        if not protocol in result['urls'].keys():
+                            result['urls'][protocol] = 'http://google.com/'
+                            
+                            # How to show:
+                            
+                elif args[i] in ['--show-all']:
+                    result['show'] = 'all'
+                    
+                elif args[i] in ['--show-good']:
+                    result['show'] = 'good'
+                    
+                elif args[i] in ['--show-bad']:
+                    result['show'] = 'bad'
+                    
+                elif args[i] in ['--no-format']:
+                    result['format'] = False    
+                    
+                elif args[i] in ['--format']:
+                    result['format'] = True
+        
+        elif args[i].startswith('-'):
+            keys = args[i]
+            for char in keys:
+                if char in ['f']:      
+                    file_name = args[i + 1] 
+                    try:                 
+                        file = open(file_name)
+                        proxies += [proxy.strip() for proxy in file] 
+                        file.close()
+                    except:         
+                        error(result['quiet'], 'Unable to open file %s.' % file_name)
+                    finally: break
+                        
+                            
+                elif char in ['c']:
+                    try:  
+                        result['threads_count'] = int(args[i + 1])
+                    except ValueError: 
+                        error(result['quiet'], 
+                              'Can\'t set number of threads: %s is not a valid number.' 
+                              % args[i + 1])
+                    finally: break
+                
+                elif char in ['o']: 
+                    result['out_file'] = args[i + 1]
+                    break
+                        
+                elif char in ['u']:
+                    protocol = args[i + 1]
+                    url = args[i + 2]
+                    result['urls'][protocol] = url
+                    break
+                            
+                
+                elif char in ['d']: 
+                    if args[i + 1] in result['protocols']: 
+                        result['protocols'].remove(args[i + 1]) 
+                    break
+                                
+                elif char in ['e']: 
+                    protocol = args[i + i]
+                    if not protocol in result['protocols']: 
+                        result['protocols'].append(args[i + 1])
+                        if not protocol in result['urls'].keys():
+                            result['urls'][protocol] = 'http://google.com/'
+                    break
+                        
+                        # How to show:
+                        
+                elif char in ['a']:
+                    result['show'] = 'all'
+                                    
+                elif char in ['g']:
+                    result['show'] = 'good'
+                                    
+                elif char in ['b']:
+                    result['show'] = 'bad'                     
+                    
     if proxies == []:     
         error(result['quiet'], 'Proxy not found.')
         sys.exit(1)
