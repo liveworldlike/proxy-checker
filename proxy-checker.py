@@ -40,7 +40,7 @@ Try --help.""".format(sys.argv[0])
 
 
 def error(mode, error):       
-    if not mode: print(error) 
+    if not mode: sys.stderr.write(error + '\n') 
     
 def arguments_parser():
     if len(sys.argv) < 2:
