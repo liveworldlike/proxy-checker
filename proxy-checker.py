@@ -11,23 +11,19 @@ Keys:
         -h      --help                  show this message and exit
 Output:
         -a      --show-all              show good and bad proxies either
-        -g      --show-good             show only good proxies
-                                        (defaul option)
+        -g      --show-good             show only good proxies (defaul)
         -b      --show-bad              show only bad proxies
                 --format                print and write proxies in format host:port +/- +/- +/-
-                                        (default option)
-                --no-format             print and write proxies without color: host:port
+                --no-format             print and write proxies without color: host:port (default)
         -q      --quiet                 don't show errors
 Files:
         -o      --out                   specify output file
-                                        (default value - /dev/null)
         -f      --file                  specify input file
 Threads:
         -c      --threads-count         set the number of threads
                                         (default value - 64)
 Connecting: 
-                --timeout               set timeout in seconds
-                                        (default value - 0.5)
+                --timeout               set timeout in seconds(default value - 0.5)
         -u      --url <protocol> <url> url to check proxies
                                        url should be in format <scheme>://<host>[:port][/path]
         -d      --disable <protocol>   don't try to connect using protocol
@@ -57,10 +53,14 @@ def arguments_parser():
             'https'        : 'https://google.com',
             'socks5'       : 'http://google.com'
                           },  
-        'protocols'     : ['http', 'https', 'socks5'], 
+        'protocols'     : [
+                            'http',
+                            'https',
+                            'socks5'
+                          ], 
         'timeout'       : 0.5,
         
-        'format'        : True,
+        'format'        : False,
         'quiet'         : False           
     }    
     
@@ -73,7 +73,10 @@ def arguments_parser():
         result['quiet'] = True 
     
     # The main body of parser  
-    for i in range(len(args)):         
+    for i in range(len(args)):
+        
+        # Check long keys
+        
         if args[i].startswith('--'):
             if args[i] in ['--file']:      
                 file_name = args[i + 1] 
@@ -113,30 +116,32 @@ def arguments_parser():
                 if args[i + 1] in result['protocols']: 
                     result['protocols'].remove(args[i + 1])  
                     
-                elif args[i] in ['--enable']: 
-                    protocol = args[i + i]
-                    if not protocol in result['protocols']: 
-                        result['protocols'].append(args[i + 1])
-                        if not protocol in result['urls'].keys():
-                            result['urls'][protocol] = 'http://google.com/'
-                            
-                            # How to show:
-                            
-                elif args[i] in ['--show-all']:
-                    result['show'] = 'all'
+            elif args[i] in ['--enable']: 
+                protocol = args[i + i]
+                if not protocol in result['protocols']: 
+                    result['protocols'].append(args[i + 1])
+                    if not protocol in result['urls'].keys():
+                        result['urls'][protocol] = 'http://google.com/'
+                        
+            # How to show:
+                        
+            elif args[i] in ['--show-all']:
+                result['show'] = 'all'
                     
-                elif args[i] in ['--show-good']:
-                    result['show'] = 'good'
-                    
-                elif args[i] in ['--show-bad']:
-                    result['show'] = 'bad'
-                    
-                elif args[i] in ['--no-format']:
-                    result['format'] = False    
-                    
-                elif args[i] in ['--format']:
-                    result['format'] = True
-        
+            elif args[i] in ['--show-good']:
+                result['show'] = 'good'
+                
+            elif args[i] in ['--show-bad']:
+                result['show'] = 'bad'
+                
+            elif args[i] in ['--no-format']:
+                result['format'] = False    
+                
+            elif args[i] in ['--format']:
+                result['format'] = True
+                
+            # Check short keys 
+                
         elif args[i].startswith('-'):
             keys = args[i]
             for char in keys:
@@ -149,8 +154,7 @@ def arguments_parser():
                     except:         
                         error(result['quiet'], 'Unable to open file %s.' % file_name)
                     finally: break
-                        
-                            
+
                 elif char in ['c']:
                     try:  
                         result['threads_count'] = int(args[i + 1])
@@ -184,7 +188,7 @@ def arguments_parser():
                             result['urls'][protocol] = 'http://google.com/'
                     break
                         
-                        # How to show:
+                # How to show:
                         
                 elif char in ['a']:
                     result['show'] = 'all'
@@ -200,35 +204,12 @@ def arguments_parser():
         sys.exit(1)
         
     return proxies, result
-
-def main():
-    colorama.init()
-    proxies, data = arguments_parser() 
-    threads = []
-    queue = Queue()
-    file_locker = threading.Lock()
-    if data['format']: # Print table header
-        print('%22s\t%s' % (
-            'hostname/ip',
-            '\t'.join(data['protocols'])
-            )
-        )
-    for proxy in proxies: 
-        queue.put(proxy)      
-    for i in range(data['threads_count']):
-        thread = Checker(data, queue, file_locker, i) 
-        threads.append(thread)                     
-        thread.start()                         
-    for thread in threads: 
-        thread.join()      
-
         
 class Checker(threading.Thread):
-    def __init__(self, data, queue, file_locker, ID):
+    def __init__(self, data, queue, locker):
         self.data = data               
         self.queue = queue             
-        self.ID = ID
-        self.locker = file_locker       
+        self.locker = locker       
         threading.Thread.__init__(self) 
         
     def run(self):
@@ -248,12 +229,11 @@ class Checker(threading.Thread):
                         proxies = gen_proxies(protocol, proxy),
                         timeout = self.data['timeout']
                     ).ok 
-                except requests.exceptions.ReadTimeout: 
+                except requests.exceptions.ReadTimeout: # If timeout, check proxy again
                     try:
                         valid[protocol] = requests.get(
                             self.data['urls'][protocol],
                             proxies = gen_proxies(protocol, proxy),
-                            timeout = 5
                         ).ok
                     except: 
                         valid[protocol] = False 
@@ -273,11 +253,15 @@ class Checker(threading.Thread):
                 ((not is_valid) and self.data['show'] == 'bad') or
                 (self.data['show'] == 'all')):
                 with self.locker: 
+                    
                     if self.data['format']:
                         if is_valid:
                             print(colorama.Fore.GREEN + proxy + colorama.Fore.RESET)
                         else:
                             print(colorama.Fore.RED + proxy + colorama.Fore.RESET)
+                    else:
+                        print(proxy)
+                        
                     if self.data['out_file']: 
                         try:
                             file = open(self.data['out_file'], 'a')
@@ -287,4 +271,23 @@ class Checker(threading.Thread):
                             error(self.data['quiet'], 
                                   'Unable to open file %s.' % self.data['out_file'])
                         
-if __name__ == '__main__': main()
+if __name__ == '__main__': 
+    colorama.init()
+    proxies, data = arguments_parser() 
+    queue = Queue()
+    for proxy in proxies: 
+        queue.put(proxy)  # Fill queue with proxies    
+    locker = threading.Lock()
+    if data['format']: # Print table header
+        print('%22s\t%s' % (
+             'hostname/ip',
+             '\t'.join(data['protocols'])
+             )
+        )     
+    threads = []
+    for i in range(data['threads_count']):
+        thread = Checker(data, queue, locker) 
+        threads.append(thread)                     
+        thread.start()                         
+    for thread in threads: 
+        thread.join()     
